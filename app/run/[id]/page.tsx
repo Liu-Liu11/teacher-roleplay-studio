@@ -15,7 +15,34 @@ import { useAudioPlayer } from '@/lib/useAudioPlayer';
 import { useStagePrep } from '@/lib/useStagePrep';
 import { useT } from '@/lib/useT';
 import { formatDate } from '@/lib/utils';
+import { scenarioForNetwork } from '@/lib/prompts';
 import type { Evaluation, Message, Session } from '@/lib/types';
+
+/**
+ * Vercel 在 body 过大 / 函数超时 等情况下会返回**非 JSON 文本**（例如 "Request
+ * Entity Too Large"）。直接 await res.json() 就会崩成 "Unexpected token 'R'"，
+ * 老师根本看不懂。这里统一兜一下：先看 status，再尝试 JSON，实在不行把纯文本
+ * 截断显示出来，至少让错误人话化。
+ */
+async function parseJsonOrThrow(res: Response): Promise<any> {
+  const ct = res.headers.get('content-type') || '';
+  if (ct.includes('application/json')) {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+    return data;
+  }
+  // 不是 JSON：Vercel 边缘层或上游错误
+  const text = (await res.text()).trim();
+  if (res.status === 413) {
+    throw new Error(
+      'Request too large (Vercel 4.5 MB limit). Try removing generated scene images / avatars or shortening the scenario.'
+    );
+  }
+  if (res.status === 504 || /timeout/i.test(text)) {
+    throw new Error('Server timeout. Try a shorter transcript or fewer NPCs.');
+  }
+  throw new Error(`HTTP ${res.status}: ${text.slice(0, 200) || 'non-JSON response'}`);
+}
 
 type Tab = 'live' | 'simulate' | 'history';
 
@@ -182,12 +209,16 @@ function LivePanel({ scenario, onSessionDone }: any) {
       const res = await fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenario, transcript: current, locale, apiKey: userApiKey }),
+        body: JSON.stringify({
+          scenario: scenarioForNetwork(scenario),
+          transcript: current,
+          locale,
+          apiKey: userApiKey,
+        }),
         signal: controller.signal,
       });
       if (gen !== runGenRef.current) return; // 回来时已经过期
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const data = await parseJsonOrThrow(res);
 
       if (data.next === 'END') {
         setStatus('ended');
@@ -257,7 +288,7 @@ function LivePanel({ scenario, onSessionDone }: any) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          scenario,
+          scenario: scenarioForNetwork(scenario),
           sessionId,
           transcript,
           runnerType: 'human_student',
@@ -266,8 +297,7 @@ function LivePanel({ scenario, onSessionDone }: any) {
           apiKey: userApiKey,
         }),
       });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const data = await parseJsonOrThrow(res);
       setEvaluation(data as Evaluation);
 
       const session: Session = {
@@ -492,10 +522,14 @@ function SimulatePanel({ scenario, onSessionDone }: any) {
         const simRes = await fetch('/api/simulate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scenario: frozenScenario, simulatedStudentId: studentId, locale, apiKey: userApiKey }),
+          body: JSON.stringify({
+            scenario: scenarioForNetwork(frozenScenario),
+            simulatedStudentId: studentId,
+            locale,
+            apiKey: userApiKey,
+          }),
         });
-        const simData = await simRes.json();
-        if (simData.error) throw new Error(simData.error);
+        const simData = await parseJsonOrThrow(simRes);
 
         const sessionId = createSessionId();
         const transcript: Message[] = simData.transcript;
@@ -517,7 +551,7 @@ function SimulatePanel({ scenario, onSessionDone }: any) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              scenario: frozenScenario,
+              scenario: scenarioForNetwork(frozenScenario),
               sessionId,
               transcript,
               runnerType: 'simulated_student',
@@ -526,11 +560,10 @@ function SimulatePanel({ scenario, onSessionDone }: any) {
               apiKey: userApiKey,
             }),
           });
-          const evalData = await evalRes.json();
-          if (evalData.error) {
-            evalError = evalData.error;
-          } else {
-            evaluation = evalData;
+          try {
+            evaluation = await parseJsonOrThrow(evalRes);
+          } catch (e: any) {
+            evalError = e?.message || 'evaluate failed';
           }
         } catch (e: any) {
           evalError = e?.message || 'evaluate failed';

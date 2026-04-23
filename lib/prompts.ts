@@ -15,6 +15,31 @@ import { languageLabel } from './i18n';
  *
  * 这一步是 Gemini 2.5 flash 1M input token 限制的主要防线。
  */
+/**
+ * 把 scenario 瘦身成"发给自家 /api/* 路由"的网络 payload：
+ * 只去掉 base64 重字段 + 运行态用不上的聊天历史，**不截文本**。
+ * 这和 compactScenarioForPrompt 的区别：
+ * - compactScenarioForPrompt：给 LLM 当 prompt 用，会截文本保 token
+ * - scenarioForNetwork：给服务器路由用，服务端还要用完整文本塞给 LLM，
+ *   所以 persona / context 一个字都不能丢；只剥 sceneImage / avatarImage / pedagogyChat
+ *
+ * 为什么要这步：Vercel 每次 POST body 上限 4.5 MB；一张生成的 sceneImage
+ * base64 就 1-2 MB，3 个 NPC 头像又各 1 MB，再加上积累的 pedagogyChat，
+ * 轻松就撑破 4.5 MB → 服务器直接返 413 Request Entity Too Large 纯文本，
+ * 前端 JSON.parse 爆 "Unexpected token 'R'"。
+ */
+export function scenarioForNetwork(scenario: Scenario): Scenario {
+  const { sceneImage: _si, pedagogyChat: _pc, agents, ...rest } = scenario as any;
+  return {
+    ...rest,
+    pedagogyChat: [],   // 保留字段但清空，避免服务端 schema 校验缺字段报错
+    agents: (agents || []).map((a: any) => {
+      const { avatarImage: _ai, ...agentRest } = a || {};
+      return agentRest;
+    }),
+  };
+}
+
 function compactScenarioForPrompt(scenario: Partial<Scenario>): Partial<Scenario> {
   const MAX_TEXT = 4000;       // 单个自由文本字段最长多少字符
   const MAX_SECTION = 6000;    // customSection 的 body 最长

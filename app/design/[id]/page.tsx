@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useStudio } from '@/lib/store';
+import { scenarioForNetwork } from '@/lib/prompts';
 import { Button } from '@/components/Button';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ApiKeySettingsButton, ApiKeyMissingBanner } from '@/components/ApiKeySettings';
@@ -77,7 +78,7 @@ export default function DesignPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          scenario,
+          scenario: scenarioForNetwork(scenario),
           userMessage,
           chatHistory: scenario.pedagogyChat,
           locale,

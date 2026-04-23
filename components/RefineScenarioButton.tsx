@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStudio } from '@/lib/store';
 import { useT } from '@/lib/useT';
+import { scenarioForNetwork } from '@/lib/prompts';
 import type { Evaluation, RefinementResponse, Scenario } from '@/lib/types';
 
 interface Props {
@@ -111,7 +112,12 @@ export function RefineScenarioButton({ scenario, evaluations, onApplied }: Props
       const res = await fetch('/api/refine', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenario, evaluations, locale, apiKey: userApiKey }),
+        body: JSON.stringify({
+          scenario: scenarioForNetwork(scenario),
+          evaluations,
+          locale,
+          apiKey: userApiKey,
+        }),
         signal: controller.signal,
       });
       const data = await res.json();
