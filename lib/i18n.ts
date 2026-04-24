@@ -49,23 +49,44 @@ const dict = {
     no_scenarios: '还没有场景',
 
     // ─── Landing（首次访问的引导页） ───
-    landing_hero_tagline: '对话式设计多角色教学场景',
-    landing_hero_body: '几分钟，生成可直接上课的角色扮演场景。',
-    landing_primary_cta: '开始创建',
-    landing_secondary_cta: '导入场景',
-    landing_how_step1_title: '描述',
-    landing_how_step1_body: '说说你要教什么。',
-    landing_how_step2_title: '设计',
-    landing_how_step2_body: '专家自动生成 NPC、情境与挑战点。',
-    landing_how_step3_title: '运行',
-    landing_how_step3_body: '模拟学生测试，导出即可使用。',
-    landing_feat_npc: '多角色 NPC',
-    landing_feat_image: 'AI 情境图',
-    landing_feat_students: '模拟学生',
-    landing_feat_eval: '评估报告',
-    landing_feat_export: '一键导出',
-    landing_feat_bilingual: '中英双语',
-    landing_privacy_note: '数据仅保存在你的浏览器本地，不会上传。',
+    landing_hero_tagline: '用对话，搭建属于你的多角色教学场景',
+    landing_hero_body:
+      '告诉教学法专家你要教什么、学生容易在哪里卡住，几分钟内就能得到一个可直接上课用的多 NPC 角色扮演场景——还配上 AI 生成的情境图与模拟学生测试。',
+    landing_primary_cta: '🚀 开始创建我的第一个场景',
+    landing_secondary_cta: '已有文件？导入场景',
+    landing_how_title: '三步从想法到可上课的场景',
+    landing_how_step1_title: '1. 说说你想教什么',
+    landing_how_step1_body:
+      '对教学法专家用大白话描述：学科、学生背景、希望他们学会什么。不需要写prompt。',
+    landing_how_step2_title: '2. 专家帮你设计',
+    landing_how_step2_body:
+      '自动生成 NPC 角色、隐藏动机、教学挑战点（trap），并用 Gemini 生成一张情境图。',
+    landing_how_step3_title: '3. 运行 / 测试 / 导出',
+    landing_how_step3_body:
+      '用模拟学生批量跑场景、看评估报告，满意后导出给课堂或 LMS 使用。',
+    landing_features_title: '平台能为你做什么',
+    landing_feat_npc_title: '🎭 多角色 NPC',
+    landing_feat_npc_body:
+      '一个场景里可以同时有多个 AI 角色，各有自己的人设、知识边界、隐藏动机与护栏。',
+    landing_feat_image_title: '🖼️ AI 生成情境图',
+    landing_feat_image_body:
+      '自动用 Gemini 生成符合场景氛围的图像与 NPC 头像，学生一眼进入情境。',
+    landing_feat_students_title: '🤖 模拟学生测试',
+    landing_feat_students_body:
+      '用不同类型的模拟学生（菜鸟 / 高手 / 乱跑型）批量跑你的场景，提前发现 bug。',
+    landing_feat_eval_title: '📊 教学评估报告',
+    landing_feat_eval_body:
+      '每次跑完自动给出评估：学生是否命中目标、是否踩到挑战点、哪里需要改进。',
+    landing_feat_export_title: '📥 一键导出',
+    landing_feat_export_body:
+      '导出完整 prompt 或 JSON 场景包，带到 GPT / Claude / 任何平台都能继续用。',
+    landing_feat_bilingual_title: '🌐 中英双语',
+    landing_feat_bilingual_body:
+      '界面、提示词、生成内容都支持中英切换，团队里中英混合也没问题。',
+    landing_cta_title: '准备好了吗？',
+    landing_cta_body: '点下面的按钮，教学法专家会马上和你对话。',
+    landing_privacy_note:
+      '所有数据保存在你自己浏览器的 LocalStorage 里，不会上传到服务器，也看不到其他老师的场景。',
 
     // ─── 设计页 ───
     export: '📥 导出',
@@ -453,23 +474,44 @@ const dict = {
     no_scenarios: 'No scenarios',
 
     // ─── Landing (first-visit onboarding) ───
-    landing_hero_tagline: 'Design multi-character teaching scenarios by chatting',
-    landing_hero_body: 'Class-ready role-play scenarios in minutes.',
-    landing_primary_cta: 'Get started',
-    landing_secondary_cta: 'Import scenario',
-    landing_how_step1_title: 'Describe',
-    landing_how_step1_body: 'Tell it what you want to teach.',
-    landing_how_step2_title: 'Design',
-    landing_how_step2_body: 'The specialist generates NPCs, context and traps.',
-    landing_how_step3_title: 'Run',
-    landing_how_step3_body: 'Test with simulated students, then export.',
-    landing_feat_npc: 'Multi-NPC',
-    landing_feat_image: 'AI scenes',
-    landing_feat_students: 'Simulated students',
-    landing_feat_eval: 'Evaluation',
-    landing_feat_export: 'One-click export',
-    landing_feat_bilingual: 'Bilingual',
-    landing_privacy_note: 'Your data stays in your browser — never uploaded.',
+    landing_hero_tagline: 'Design multi-character teaching scenarios — just by chatting',
+    landing_hero_body:
+      'Tell the Pedagogy Specialist what you want to teach and where students usually get stuck. In a few minutes you get a ready-to-use multi-NPC role-play scenario, with an AI-generated scene image and simulated students for testing.',
+    landing_primary_cta: '🚀 Create my first scenario',
+    landing_secondary_cta: 'Already have a file? Import scenario',
+    landing_how_title: 'Three steps from idea to classroom-ready scenario',
+    landing_how_step1_title: '1. Tell it what you teach',
+    landing_how_step1_body:
+      'Describe in plain language: discipline, student background, what you want them to learn. No prompt engineering required.',
+    landing_how_step2_title: '2. The specialist designs with you',
+    landing_how_step2_body:
+      'It generates NPCs, hidden motivations and pedagogical traps, and uses Gemini to paint a scene image.',
+    landing_how_step3_title: '3. Run, test, export',
+    landing_how_step3_body:
+      'Batch-run the scenario with simulated students, review the evaluation report, and export when you are happy.',
+    landing_features_title: 'What this platform does for you',
+    landing_feat_npc_title: '🎭 Multi-character NPCs',
+    landing_feat_npc_body:
+      'Multiple AI characters per scenario — each with its own persona, knowledge boundary, hidden motives and guardrails.',
+    landing_feat_image_title: '🖼️ AI scene images',
+    landing_feat_image_body:
+      'Gemini paints scene and avatar images that match the situation, so students feel the context immediately.',
+    landing_feat_students_title: '🤖 Simulated students',
+    landing_feat_students_body:
+      'Batch-test your scenario with different student archetypes (novice / expert / distracted) and find issues before class.',
+    landing_feat_eval_title: '📊 Evaluation reports',
+    landing_feat_eval_body:
+      'After every run you get an automatic report: hit objectives, triggered traps, and suggested fixes.',
+    landing_feat_export_title: '📥 One-click export',
+    landing_feat_export_body:
+      'Export the full prompt or a JSON bundle — bring it to GPT, Claude or any other platform.',
+    landing_feat_bilingual_title: '🌐 Bilingual ZH / EN',
+    landing_feat_bilingual_body:
+      'UI, prompts and generated content all switch between Chinese and English.',
+    landing_cta_title: 'Ready to start?',
+    landing_cta_body: 'Click below and the Pedagogy Specialist will start chatting with you.',
+    landing_privacy_note:
+      'All data stays in your own browser LocalStorage — never uploaded, never visible to other teachers.',
 
     // ─── Design page ───
     export: '📥 Export',
