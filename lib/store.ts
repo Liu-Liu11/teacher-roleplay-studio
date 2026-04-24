@@ -1,10 +1,131 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
 import type { PromptLibraryEntry, Scenario, Session } from './types';
 import { t, type Locale } from './i18n';
+
+/**
+ * 防抖 + 配额兜底的 localStorage 包装
+ * ──────────────────────────────────────────
+ * 问题：Zustand persist 默认每次 set() 都会 JSON.stringify 全量 state 写回 localStorage。
+ * 在老师手下，设计页的每一次按键、每一次图片生成、每一次会话回合都会触发写入。
+ * 几十 KB 到几 MB 的 blob，每次写几百毫秒 → 主线程阻塞 → 界面卡。
+ *
+ * 更致命：localStorage 单域 5MB 上限。sessions（完整 transcript）+ pedagogyChat
+ * 无限增长，一旦超额，setItem 抛 QuotaExceededError，zustand 内部静默吞掉 ——
+ * 用户点什么都像"没反应"，因为在内存里改了但写不进去，下次刷新全回滚。
+ * 开无痕窗口是空 localStorage，所以能用。
+ *
+ * 这里做三件事：
+ * 1. 写入防抖（400ms）：快速连打只最后一次真正落盘
+ * 2. 离开页面前强制 flush：不丢最后一次改动
+ * 3. 配额超了自动逐级丢掉老数据（sessions → promptLibrary → pedagogyChat）再重试
+ */
+const STORAGE_DEBOUNCE_MS = 400;
+
+function rawSet(key: string, value: string): boolean {
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 配额超限时的渐进式瘦身：先丢一半 sessions → 全丢 sessions → 丢 promptLibrary →
+ * 清空 pedagogyChat。每一步都重试，能成就停。用户的场景核心结构永远保留。
+ */
+function setWithEviction(key: string, value: string): void {
+  if (rawSet(key, value)) return;
+  let parsed: any;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return; // 反正都写不进去，放弃
+  }
+  const state = parsed?.state;
+  if (!state) return;
+
+  // 1) 丢一半最老的 sessions
+  if (state.sessions && typeof state.sessions === 'object') {
+    const entries = Object.entries<any>(state.sessions).sort(
+      (a, b) => (b[1]?.startedAt ?? 0) - (a[1]?.startedAt ?? 0)
+    );
+    const half = Math.ceil(entries.length / 2);
+    state.sessions = Object.fromEntries(entries.slice(0, half));
+    if (rawSet(key, JSON.stringify(parsed))) return;
+  }
+
+  // 2) 全丢 sessions
+  state.sessions = {};
+  if (rawSet(key, JSON.stringify(parsed))) return;
+
+  // 3) 丢 promptLibrary
+  state.promptLibrary = [];
+  if (rawSet(key, JSON.stringify(parsed))) return;
+
+  // 4) 清空每个场景的 pedagogyChat
+  if (state.scenarios && typeof state.scenarios === 'object') {
+    for (const sid of Object.keys(state.scenarios)) {
+      if (state.scenarios[sid]) state.scenarios[sid].pedagogyChat = [];
+    }
+  }
+  rawSet(key, JSON.stringify(parsed)); // 尽力而为，不成就算了
+}
+
+let pendingKey: string | null = null;
+let pendingValue: string | null = null;
+let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+
+function flushPending() {
+  if (pendingKey !== null && pendingValue !== null) {
+    setWithEviction(pendingKey, pendingValue);
+  }
+  pendingKey = null;
+  pendingValue = null;
+  if (pendingTimer) {
+    clearTimeout(pendingTimer);
+    pendingTimer = null;
+  }
+}
+
+if (typeof window !== 'undefined') {
+  // 关标签前强制落盘，避免最后一次按键丢失
+  window.addEventListener('beforeunload', flushPending);
+  // 切后台时也 flush（移动端 beforeunload 不一定触发）
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushPending();
+  });
+}
+
+const debouncedQuotaStorage = createJSONStorage(() => ({
+  getItem: (k) => {
+    if (typeof window === 'undefined') return null;
+    return window.localStorage.getItem(k);
+  },
+  setItem: (k, v) => {
+    if (typeof window === 'undefined') return;
+    pendingKey = k;
+    pendingValue = v;
+    if (pendingTimer) clearTimeout(pendingTimer);
+    pendingTimer = setTimeout(flushPending, STORAGE_DEBOUNCE_MS);
+  },
+  removeItem: (k) => {
+    if (typeof window === 'undefined') return;
+    if (pendingKey === k) {
+      pendingKey = null;
+      pendingValue = null;
+      if (pendingTimer) {
+        clearTimeout(pendingTimer);
+        pendingTimer = null;
+      }
+    }
+    window.localStorage.removeItem(k);
+  },
+}));
 
 /**
  * API key fallback 单独小键
@@ -234,8 +355,12 @@ export const useStudio = create<StudioStore>()(
     {
       name: 'teacher-roleplay-studio',
       version: 2,
-      // ⚠️ 不要把 base64 图片塞进 localStorage（上限 ~5MB，一张 sceneImage 就 1-2MB）。
-      // 只持久化"结构"，图片属于"缓存"，刷新后由 useStagePrep 再生成即可。
+      // 自定义 storage：防抖 + 配额超限时逐级丢数据。定义见文件顶部。
+      storage: debouncedQuotaStorage,
+      // ⚠️ 不要把 base64 图片 / 无界长对话 / 完整 session transcript 塞进 localStorage。
+      // - 图片：有 sceneImage/avatarImage 就把它当缓存，刷新后 useStagePrep 再生成
+      // - pedagogyChat：只留最近 40 条（约 20 轮专家对话），老的不影响后续设计
+      // - sessions：每个场景只留最新 10 次，跨场景不做全局上限
       partialize: (state) => ({
         ...state,
         scenarios: Object.fromEntries(
@@ -245,9 +370,27 @@ export const useStudio = create<StudioStore>()(
               ...s,
               sceneImage: undefined,
               agents: s.agents.map((a) => ({ ...a, avatarImage: undefined })),
+              pedagogyChat: (s.pedagogyChat || []).slice(-40),
             },
           ])
         ),
+        sessions: (() => {
+          // 按 scenarioId 分组，每组只保留最新 10 次；其他的扔掉避免撑爆配额。
+          // "最新 10 次" 足够老师回顾近几次测试结果，再往前的历史价值递减。
+          const byScenario = new Map<string, Session[]>();
+          for (const sess of Object.values(state.sessions)) {
+            if (!sess || typeof sess.scenarioId !== 'string') continue;
+            const arr = byScenario.get(sess.scenarioId) || [];
+            arr.push(sess);
+            byScenario.set(sess.scenarioId, arr);
+          }
+          const kept: Session[] = [];
+          for (const arr of byScenario.values()) {
+            arr.sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0));
+            kept.push(...arr.slice(0, 10));
+          }
+          return Object.fromEntries(kept.map((s) => [s.id, s]));
+        })(),
       }),
       migrate: (persistedState: any, version: number) => {
         if (!persistedState) return persistedState;
