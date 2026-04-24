@@ -40,10 +40,18 @@ export async function POST(req: NextRequest) {
       .map((m) => `${m.role === 'user' ? teacherLabel : selfLabel}: ${m.content}`)
       .join('\n\n');
 
+    // 老师切语言后的痛点：即便 system prompt 指定了输出语言，模型受前面聊天历史的
+    // 语言惯性影响，仍可能继续用旧语言回复（中文聊了 10 轮，切到 en 后 AI 还是中文）。
+    // 每一轮都在 user prompt 末尾重申一次"本次回复必须用 X 语言"，模型会更稳。
+    const languageLock =
+      loc === 'en'
+        ? '\n\n⚠️ LANGUAGE FOR THIS REPLY: Respond entirely in English, including the "reply" field and any dialogue, narration, or scenarioPatch text fields. The prior conversation may be in Chinese — IGNORE that and switch to English now. The teacher has set their UI to English.'
+        : '\n\n⚠️ 本轮回复语言：请完全用中文回复，包括 "reply" 字段以及任何对话/旁白/scenarioPatch 文本字段。即使前面的对话是英文，也请从本轮开始改用中文。老师已将界面切换为中文。';
+
     const userPrompt = `${historyText ? `${pastHeader}\n${historyText}\n\n` : ''}${saidHeader}
 ${userMessage}
 
-${instr}`;
+${instr}${languageLock}`;
 
     const result = await callLLMJson<PedagogyResponse>({
       system,

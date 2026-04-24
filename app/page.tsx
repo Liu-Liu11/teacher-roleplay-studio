@@ -20,6 +20,9 @@ export default function HomePage() {
 
   const [hydrated, setHydrated] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
+  // 老师"已经有场景"之后还能主动回看 landing / 说明页。
+  // 没这个开关的话，一建场景 landing 就永远消失，新老师再想看一下平台是干嘛的就没路径。
+  const [showAbout, setShowAbout] = useState(false);
   const libraryCount = useStudio((s) => s.promptLibrary.length);
   useEffect(() => setHydrated(true), []);
 
@@ -84,6 +87,13 @@ export default function HomePage() {
           <div className="flex gap-2 items-center">
             <LanguageSwitcher />
             <ApiKeySettingsButton />
+            <Button
+              variant="secondary"
+              onClick={() => setShowAbout((v) => !v)}
+              aria-pressed={showAbout}
+            >
+              {t('about_button')}
+            </Button>
             <Button variant="secondary" onClick={() => setShowLibrary(true)}>
               {t('library_button')}
               {hydrated && libraryCount > 0 && (
@@ -104,7 +114,7 @@ export default function HomePage() {
       <div className="max-w-6xl mx-auto px-6 py-8">
         {!hydrated ? (
           <div className="text-center text-slate-400 py-24">{t('loading')}</div>
-        ) : list.length === 0 ? (
+        ) : list.length === 0 || showAbout ? (
           <EmptyState onCreate={handleCreate} onImport={handleImport} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

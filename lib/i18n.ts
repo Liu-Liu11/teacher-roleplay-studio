@@ -321,6 +321,7 @@ const dict = {
     export_close: '关闭',
 
     library_button: '📚 Prompt 库',
+    about_button: 'ⓘ 关于',
     library_title: '📚 我的 Prompt 库',
     library_subtitle: '所有导出过的场景 / 评估 prompt 都在这里，可以随时复制、下载、改名。',
     library_empty:
@@ -763,6 +764,7 @@ const dict = {
     export_close: 'Close',
 
     library_button: '📚 Prompt Library',
+    about_button: 'ⓘ About',
     library_title: '📚 My Prompt Library',
     library_subtitle:
       'All your exported scenario / evaluation prompts live here — copy, download, or rename anytime.',
