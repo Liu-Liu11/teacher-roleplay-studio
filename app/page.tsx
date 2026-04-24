@@ -42,8 +42,26 @@ export default function HomePage() {
       try {
         const text = await file.text();
         const data = JSON.parse(text);
-        const id = createScenario(data);
-        router.push(`/design/${id}`);
+        // 起码得是一个对象，而且能看出是场景（有 title 或 agents 或 learningObjectives 之一）
+        if (!data || typeof data !== 'object') throw new Error('not an object');
+        const looksLikeScenario =
+          'title' in data ||
+          'agents' in data ||
+          'learningObjectives' in data ||
+          'studentRole' in data;
+        if (!looksLikeScenario) throw new Error('not a scenario');
+
+        // 剥掉导出时自带的 id/时间戳/版本号等——否则 ...seed 会盖掉 emptyScenario 给的新 id，
+        // 再导入一次相同的文件就会覆盖前一次导入的场景，看起来像"import 没反应"。
+        const {
+          id: _oldId,
+          createdAt: _c,
+          updatedAt: _u,
+          ...seed
+        } = data;
+
+        const newId = createScenario(seed);
+        router.push(`/design/${newId}`);
       } catch (err) {
         alert(t('import_failed'));
       }

@@ -64,6 +64,38 @@ export function ExportPromptsModal({ scenario, onClose }: Props) {
     URL.revokeObjectURL(url);
   }
 
+  /**
+   * 下载 .json —— 整个场景的完整数据包，可以用首页"导入场景"按钮重新载入。
+   * 用途：跨设备迁移、分享给同事、备份。
+   *
+   * 这里去掉 sceneImage 和 agents[*].avatarImage（生成的 base64 图很大，再生即可），
+   * 以及 pedagogyChat（那是老师和教学法专家的私下对话历史，分享时不需要）。
+   * 核心结构字段全部保留——包括 agents / rubric / traps / customSections 等。
+   */
+  function downloadJson() {
+    const safe = (scenario.title || 'scenario')
+      .replace(/[\\/:*?"<>|]+/g, '_')
+      .trim();
+    const { sceneImage: _si, pedagogyChat: _pc, agents, ...rest } = scenario as any;
+    const payload = {
+      ...rest,
+      pedagogyChat: [],
+      agents: (agents || []).map((a: any) => {
+        const { avatarImage: _ai, ...agentRest } = a || {};
+        return agentRest;
+      }),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${safe || 'scenario'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function copy(kind: Kind) {
     const content = kind === 'scenario' ? scenarioPrompt : evalPrompt;
     try {
@@ -145,6 +177,13 @@ export function ExportPromptsModal({ scenario, onClose }: Props) {
               className="text-sm px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
             >
               {t('export_download_txt')}
+            </button>
+            <button
+              onClick={downloadJson}
+              className="text-sm px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
+              title={t('export_download_json')}
+            >
+              {t('export_download_json')}
             </button>
             <button
               onClick={() => save(tab)}
