@@ -285,12 +285,12 @@ function EmptyState({
             },
           ].map((shot) => (
             <figure key={shot.src} className="group">
-              <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm group-hover:shadow-md transition-shadow bg-slate-50">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm group-hover:shadow-md transition-shadow bg-slate-50 aspect-[16/10]">
                 <img
                   src={shot.src}
                   alt={t(shot.captionKey as any)}
                   loading="lazy"
-                  className="w-full h-auto block"
+                  className="w-full h-full object-cover object-top block"
                 />
               </div>
               <figcaption className="mt-2 text-xs text-slate-500 text-center">
