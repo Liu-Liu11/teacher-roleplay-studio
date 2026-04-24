@@ -191,11 +191,13 @@ interface StudioStore {
   renameLibraryEntry: (id: string, name: string) => void;
 }
 
-function emptyScenario(id: string, seed?: Partial<Scenario>, locale: Locale = 'zh'): Scenario {
+function emptyScenario(id: string, seed?: Partial<Scenario>, _locale: Locale = 'zh'): Scenario {
   const now = Date.now();
   return {
     id,
-    title: seed?.title || t(locale, 'unnamed'),
+    // title 默认留空；渲染层用 `s.title || t('unnamed')` 做 fallback，
+    // 这样切语言时"未命名场景 / Unnamed Scenario"会跟着切换，而不是被烙死
+    title: seed?.title || '',
     discipline: seed?.discipline || '',
     createdAt: now,
     updatedAt: now,
@@ -354,7 +356,8 @@ export const useStudio = create<StudioStore>()(
     }),
     {
       name: 'teacher-roleplay-studio',
-      version: 2,
+      // v3：修 "未命名场景" 切语言不翻译的 bug（把烙死的默认 title 清空，让 UI 层翻译）
+      version: 3,
       // 自定义 storage：防抖 + 配额超限时逐级丢数据。定义见文件顶部。
       storage: debouncedQuotaStorage,
       // ⚠️ 不要把 base64 图片 / 无界长对话 / 完整 session transcript 塞进 localStorage。
@@ -407,6 +410,14 @@ export const useStudio = create<StudioStore>()(
             // 老数据可能没有 contentRevision；用 version 兜底，保持单调递增的直觉
             if (typeof s?.contentRevision !== 'number') {
               patched.contentRevision = typeof s?.version === 'number' ? s.version : 1;
+              changed = true;
+            }
+            // 历史 bug：早期版本把当时语言下的 "未命名场景 / Unnamed Scenario" 直接
+            // 烙进 title 字段。切到另一种语言后 UI 不会跟着翻。这里把这两个默认值
+            // 清空，让渲染层的 `s.title || t('unnamed')` 接手做实时翻译。
+            // 老师自己起的名字不受影响。
+            if (s?.title === '未命名场景' || s?.title === 'Unnamed Scenario') {
+              patched.title = '';
               changed = true;
             }
             if (changed) persistedState.scenarios[id] = patched;

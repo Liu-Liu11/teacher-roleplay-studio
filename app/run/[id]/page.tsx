@@ -82,7 +82,7 @@ export default function RunPage() {
           <Link href={`/design/${id}`} className="text-indigo-200 hover:text-white text-sm">
             {t('back_to_design')}
           </Link>
-          <h1 className="font-semibold text-lg tracking-tight">{scenario.title}</h1>
+          <h1 className="font-semibold text-lg tracking-tight">{scenario.title || t('unnamed')}</h1>
           <span className="text-xs text-indigo-300/70">v{scenario.version}</span>
         </div>
         <div className="flex items-center gap-3">
