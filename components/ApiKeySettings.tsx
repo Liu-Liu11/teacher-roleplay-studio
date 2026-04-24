@@ -19,9 +19,9 @@ export function ApiKeySettingsButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className={`text-sm px-3 py-1.5 rounded-md border transition-colors ${
+        className={`h-9 px-3 rounded-lg border text-sm font-medium transition-colors ${
           hasKey
-            ? 'border-slate-200 text-slate-600 hover:bg-slate-50'
+            ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
             : 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
         }`}
         title={hasKey ? t('apikey_status_set', { prefix: userApiKey.slice(0, 4) }) : t('apikey_status_unset')}

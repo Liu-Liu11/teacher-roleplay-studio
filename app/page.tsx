@@ -84,28 +84,58 @@ export default function HomePage() {
             </h1>
             <p className="text-sm text-indigo-200 mt-1.5">{t('home_subtitle')}</p>
           </div>
-          <div className="flex gap-2 items-center">
+          {/*
+            顶部按钮栏：三组布局（全部统一 h-9 / rounded-lg / text-sm）
+              ① 元设置：Language · ApiKey
+              ② 内容工具：About · Library · Import
+              ③ 主要 CTA：+ New Scenario
+            组之间用半透明竖线分隔，CTA 用品牌色凸显
+          */}
+          <div className="flex items-center gap-1.5">
             <LanguageSwitcher />
             <ApiKeySettingsButton />
-            <Button
-              variant="secondary"
+
+            <span className="w-px h-5 bg-white/20 mx-1" aria-hidden />
+
+            <button
               onClick={() => setShowAbout((v) => !v)}
               aria-pressed={showAbout}
+              className={`h-9 px-3 rounded-lg text-sm font-medium transition-colors ${
+                showAbout
+                  ? 'bg-white/20 text-white border border-white/30'
+                  : 'text-indigo-100 hover:text-white hover:bg-white/10 border border-transparent'
+              }`}
             >
               {t('about_button')}
-            </Button>
-            <Button variant="secondary" onClick={() => setShowLibrary(true)}>
+            </button>
+
+            <button
+              onClick={() => setShowLibrary(true)}
+              className="h-9 px-3 rounded-lg text-sm font-medium text-white bg-white/10 border border-white/15 hover:bg-white/20 transition-colors inline-flex items-center gap-1.5"
+            >
               {t('library_button')}
               {hydrated && libraryCount > 0 && (
-                <span className="ml-1.5 text-[10px] bg-white/20 rounded-full px-1.5 py-0.5">
+                <span className="text-[10px] bg-white/25 rounded-full px-1.5 py-0.5 leading-none">
                   {libraryCount}
                 </span>
               )}
-            </Button>
-            <Button variant="secondary" onClick={handleImport}>
+            </button>
+
+            <button
+              onClick={handleImport}
+              className="h-9 px-3 rounded-lg text-sm font-medium text-white bg-white/10 border border-white/15 hover:bg-white/20 transition-colors"
+            >
               {t('import_scenario')}
-            </Button>
-            <Button onClick={handleCreate}>{t('new_scenario')}</Button>
+            </button>
+
+            <span className="w-px h-5 bg-white/20 mx-1" aria-hidden />
+
+            <button
+              onClick={handleCreate}
+              className="h-9 px-4 rounded-lg text-sm font-semibold text-white bg-brand-500 hover:bg-brand-400 shadow-sm transition-colors"
+            >
+              {t('new_scenario')}
+            </button>
           </div>
         </div>
       </header>
@@ -285,12 +315,12 @@ function EmptyState({
             },
           ].map((shot) => (
             <figure key={shot.src} className="group">
-              <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm group-hover:shadow-md transition-shadow bg-slate-50 aspect-[16/10]">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm group-hover:shadow-md transition-shadow bg-slate-100 aspect-[16/10] flex items-center justify-center p-2">
                 <img
                   src={shot.src}
                   alt={t(shot.captionKey as any)}
                   loading="lazy"
-                  className="w-full h-full object-cover object-top block"
+                  className="max-w-full max-h-full object-contain block"
                 />
               </div>
               <figcaption className="mt-2 text-xs text-slate-500 text-center">

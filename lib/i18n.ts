@@ -87,7 +87,7 @@ const dict = {
     landing_cta_body: '点下面的按钮，教学法专家会马上和你对话。',
     landing_privacy_note:
       '所有数据保存在你自己浏览器的 LocalStorage 里，不会上传到服务器，也看不到其他老师的场景。',
-    landing_screenshots_title: '长这样',
+    landing_screenshots_title: '产品预览',
     landing_screenshot_design_caption: '设计场景：与教学法专家对话式完善草稿',
     landing_screenshot_run_caption: '运行场景：和多个 AI 角色对话，带情境图与语音',
 
@@ -321,7 +321,7 @@ const dict = {
     export_close: '关闭',
 
     library_button: '📚 Prompt 库',
-    about_button: 'ⓘ 关于',
+    about_button: '关于',
     library_title: '📚 我的 Prompt 库',
     library_subtitle: '所有导出过的场景 / 评估 prompt 都在这里，可以随时复制、下载、改名。',
     library_empty:
@@ -449,8 +449,7 @@ const dict = {
 
     // ─── Home ───
     home_title: '🎭 TeacherRoleplayStudio',
-    home_subtitle:
-      "Teacher's Roleplay Studio · Conversational multi-agent scenario builder",
+    home_subtitle: 'Conversational multi-agent scenario builder',
     import_scenario: 'Import Scenario',
     new_scenario: '+ New Scenario',
     empty_title: 'No scenarios yet — create your first one',
@@ -517,7 +516,7 @@ const dict = {
     landing_cta_body: 'Click below and the Pedagogy Specialist will start chatting with you.',
     landing_privacy_note:
       'All data stays in your own browser LocalStorage — never uploaded, never visible to other teachers.',
-    landing_screenshots_title: 'Here is what it looks like',
+    landing_screenshots_title: 'Product preview',
     landing_screenshot_design_caption:
       'Design: shape the draft by chatting with the Pedagogy Specialist',
     landing_screenshot_run_caption:
@@ -764,7 +763,7 @@ const dict = {
     export_close: 'Close',
 
     library_button: '📚 Prompt Library',
-    about_button: 'ⓘ About',
+    about_button: 'About',
     library_title: '📚 My Prompt Library',
     library_subtitle:
       'All your exported scenario / evaluation prompts live here — copy, download, or rename anytime.',

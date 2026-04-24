@@ -19,7 +19,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   return (
     <div
       className={
-        'inline-flex items-center rounded-full border border-slate-300 bg-white p-0.5 text-xs shadow-sm ' +
+        'inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white p-0.5 text-sm shadow-sm ' +
         (className || '')
       }
       role="group"
@@ -33,7 +33,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             type="button"
             onClick={() => setLocale(b.code)}
             className={
-              'px-3 py-1 rounded-full transition ' +
+              'h-full px-3 rounded-md transition text-sm font-medium ' +
               (active
                 ? 'bg-slate-900 text-white'
                 : 'text-slate-600 hover:text-slate-900')
