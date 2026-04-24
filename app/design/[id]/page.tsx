@@ -11,6 +11,7 @@ import { ApiKeySettingsButton, ApiKeyMissingBanner } from '@/components/ApiKeySe
 import { ExportPromptsModal } from '@/components/ExportPromptsModal';
 import { ScenarioDocumentView } from '@/components/ScenarioDocumentView';
 import { useT } from '@/lib/useT';
+import { t as tStatic } from '@/lib/i18n';
 import type { PedagogyResponse, Scenario } from '@/lib/types';
 
 export default function DesignPage() {
@@ -67,7 +68,10 @@ export default function DesignPage() {
     );
   }
 
-  async function callPedagogy(userMessage: string): Promise<boolean> {
+  async function callPedagogy(
+    userMessage: string,
+    opts?: { hideUserFromChat?: boolean }
+  ): Promise<boolean> {
     if (!userApiKey) {
       alert(t('apikey_missing_error'));
       return false;
@@ -99,7 +103,11 @@ export default function DesignPage() {
         timestamp: Date.now(),
       };
 
-      const patchedChat = [...scenario.pedagogyChat, nowUser, nowAssistant];
+      // 首次进入的"请自我介绍"触发句是系统内部 bootstrap，不能当成老师的真实发言
+      // 进聊天历史——否则老师一开场就看到自己"说"了一句莫名其妙的英文系统指令。
+      const patchedChat = opts?.hideUserFromChat
+        ? [...scenario.pedagogyChat, nowAssistant]
+        : [...scenario.pedagogyChat, nowUser, nowAssistant];
 
       // 合并 scenarioPatch
       const patch: Partial<Scenario> = {
@@ -117,7 +125,8 @@ export default function DesignPage() {
   }
 
   async function sendGreeting() {
-    await callPedagogy(t('first_visit_trigger'));
+    // 触发句只发给 LLM 作为"请你先打招呼"的信号，不进老师看到的聊天历史
+    await callPedagogy(t('first_visit_trigger'), { hideUserFromChat: true });
   }
 
   async function handleSend() {
@@ -129,7 +138,13 @@ export default function DesignPage() {
     if (ok) setInput('');
   }
 
-  const chatHistory = scenario.pedagogyChat;
+  // 老版本（在这次修复之前）曾把 first_visit_trigger 触发语当成用户消息持久化进 pedagogyChat。
+  // 渲染时过滤掉——两种 locale 的触发句都要挡，因为老师可能切换过语言。
+  const triggerZh = tStatic('zh', 'first_visit_trigger');
+  const triggerEn = tStatic('en', 'first_visit_trigger');
+  const chatHistory = scenario.pedagogyChat.filter(
+    (m) => !(m.role === 'user' && (m.content === triggerZh || m.content === triggerEn))
+  );
   // 更详细：不光给布尔值，还告诉老师**具体缺哪几样**，放在按钮 tooltip 里，
   // 免得老师看到按钮是灰的却不知道要填什么。
   const missingFields: string[] = [];
