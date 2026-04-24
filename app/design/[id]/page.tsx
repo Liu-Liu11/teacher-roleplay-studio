@@ -28,6 +28,11 @@ export default function DesignPage() {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
 
+  // 预热 /run/[id] 的 JS bundle——老师按"运行测试"时 Next.js 不用冷加载页面代码
+  useEffect(() => {
+    if (id) router.prefetch(`/run/${id}`);
+  }, [router, id]);
+
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -76,6 +81,25 @@ export default function DesignPage() {
       alert(t('apikey_missing_error'));
       return false;
     }
+
+    const nowUser = {
+      role: 'user' as const,
+      content: userMessage,
+      timestamp: Date.now(),
+    };
+
+    // 聊天 UX 的黄金法则：老师点发送，<100ms 内必须有反馈，否则感觉"卡"。
+    // 原来等 2-5 秒 LLM 响应时老师和助手消息才一起出现，现在**乐观地**先把
+    // 老师那条写进 store，LLM 返回时再 append 助手那条。
+    const historyBefore = scenario.pedagogyChat;
+    const chatWithUser = opts?.hideUserFromChat
+      ? historyBefore
+      : [...historyBefore, nowUser];
+
+    if (!opts?.hideUserFromChat) {
+      updateScenario(id, { pedagogyChat: chatWithUser });
+    }
+
     setLoading(true);
     try {
       const res = await fetch('/api/pedagogy', {
@@ -84,7 +108,8 @@ export default function DesignPage() {
         body: JSON.stringify({
           scenario: scenarioForNetwork(scenario),
           userMessage,
-          chatHistory: scenario.pedagogyChat,
+          // 注意传的是**乐观更新前**的历史——userMessage 字段专门负责本轮
+          chatHistory: historyBefore,
           locale,
           apiKey: userApiKey,
         }),
@@ -92,31 +117,23 @@ export default function DesignPage() {
       if (!res.ok) throw new Error(await res.text());
       const data = (await res.json()) as PedagogyResponse;
 
-      const nowUser = {
-        role: 'user' as const,
-        content: userMessage,
-        timestamp: Date.now(),
-      };
       const nowAssistant = {
         role: 'assistant' as const,
         content: data.reply,
         timestamp: Date.now(),
       };
 
-      // 首次进入的"请自我介绍"触发句是系统内部 bootstrap，不能当成老师的真实发言
-      // 进聊天历史——否则老师一开场就看到自己"说"了一句莫名其妙的英文系统指令。
-      const patchedChat = opts?.hideUserFromChat
-        ? [...scenario.pedagogyChat, nowAssistant]
-        : [...scenario.pedagogyChat, nowUser, nowAssistant];
-
-      // 合并 scenarioPatch
       const patch: Partial<Scenario> = {
-        pedagogyChat: patchedChat,
+        pedagogyChat: [...chatWithUser, nowAssistant],
         ...(data.scenarioPatch || {}),
       };
       updateScenario(id, patch);
       return true;
     } catch (e: any) {
+      // 失败就回滚乐观更新的那条消息——否则老师看到自己的话挂在那却没回复会困惑
+      if (!opts?.hideUserFromChat) {
+        updateScenario(id, { pedagogyChat: historyBefore });
+      }
       alert(t('specialist_error', { msg: e.message }));
       return false;
     } finally {
@@ -132,10 +149,11 @@ export default function DesignPage() {
   async function handleSend() {
     if (!input.trim() || loading) return;
     const msg = input.trim();
-    // 关键：先不清空 input——如果 callPedagogy 因为网络/API-key/配额问题失败，
-    // 老师刚刚打的那段话就蒸发了。只在成功时清空。
+    // 乐观清空：老师立刻看到"消息发出去了"。callPedagogy 里同时会把消息乐观地
+    // 渲染到聊天流。失败时 callPedagogy 会回滚聊天，这里把文本还给输入框让老师直接重试。
+    setInput('');
     const ok = await callPedagogy(msg);
-    if (ok) setInput('');
+    if (!ok) setInput(msg);
   }
 
   // 老版本（在这次修复之前）曾把 first_visit_trigger 触发语当成用户消息持久化进 pedagogyChat。

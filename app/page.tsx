@@ -26,6 +26,14 @@ export default function HomePage() {
   const libraryCount = useStudio((s) => s.promptLibrary.length);
   useEffect(() => setHydrated(true), []);
 
+  // 预热下一跳的 JS bundle——否则老师点"+ 新建场景"或第一次点场景卡片时，
+  // Next.js 才开始拉 /design/[id] 的代码包，有明显的空白等待感。
+  // 动态路由的 bundle 是参数无关的，用占位 id 先 warmup 即可。
+  useEffect(() => {
+    router.prefetch('/design/__warmup__');
+    router.prefetch('/run/__warmup__');
+  }, [router]);
+
   const list = hydrated
     ? Object.values(scenarios).sort((a, b) => b.updatedAt - a.updatedAt)
     : [];
