@@ -40,18 +40,28 @@ export async function POST(req: NextRequest) {
       .map((m) => `${m.role === 'user' ? teacherLabel : selfLabel}: ${m.content}`)
       .join('\n\n');
 
-    // 老师切语言后的痛点：即便 system prompt 指定了输出语言，模型受前面聊天历史的
-    // 语言惯性影响，仍可能继续用旧语言回复（中文聊了 10 轮，切到 en 后 AI 还是中文）。
-    // 每一轮都在 user prompt 末尾重申一次"本次回复必须用 X 语言"，模型会更稳。
-    const languageLock =
+    // 老师切语言后的痛点：即便 system prompt 指定了输出语言，模型读到一大段旧语言的
+    // 聊天历史后会被"语言惯性"带跑（英文聊了 10 轮，切到 zh 后 AI 还是英文回）。
+    // 单在末尾加一句不够——历史太长时末尾指令被稀释。改成"三明治"结构：历史**之前**
+    // 先声明本轮语言并明示"忽略历史语言"，历史**之后**再重申一次。
+    const languageLockTop =
       loc === 'en'
-        ? '\n\n⚠️ LANGUAGE FOR THIS REPLY: Respond entirely in English, including the "reply" field and any dialogue, narration, or scenarioPatch text fields. The prior conversation may be in Chinese — IGNORE that and switch to English now. The teacher has set their UI to English.'
-        : '\n\n⚠️ 本轮回复语言：请完全用中文回复，包括 "reply" 字段以及任何对话/旁白/scenarioPatch 文本字段。即使前面的对话是英文，也请从本轮开始改用中文。老师已将界面切换为中文。';
+        ? '⚠️ OUTPUT LANGUAGE FOR THIS REPLY IS ENGLISH.\nThe teacher has switched their UI to English. Even if the conversation history below is mostly in Chinese, respond ENTIRELY in English — the "reply" field, any dialogue, narration, feedback, and every text field inside scenarioPatch. Do NOT mirror the language of the history. Do NOT emit any Chinese characters in your output.'
+        : '⚠️ 本轮输出语言为中文（简体中文）。\n老师已将界面切换为中文。即使下方的对话历史大部分是英文，也必须从本轮开始完全使用中文回复——包括 "reply" 字段、任何对话/旁白/反馈，以及 scenarioPatch 内部所有文本字段。不要跟随历史的语言。不要在输出中夹杂英文句子。';
 
-    const userPrompt = `${historyText ? `${pastHeader}\n${historyText}\n\n` : ''}${saidHeader}
+    const languageLockBottom =
+      loc === 'en'
+        ? '(Final reminder: reply in English only, regardless of what language the history is in.)'
+        : '（最后再强调一次：无论历史用的什么语言，本轮只能用中文回复。）';
+
+    const userPrompt = `${languageLockTop}
+
+${historyText ? `${pastHeader}\n${historyText}\n\n` : ''}${saidHeader}
 ${userMessage}
 
-${instr}${languageLock}`;
+${instr}
+
+${languageLockBottom}`;
 
     const result = await callLLMJson<PedagogyResponse>({
       system,
