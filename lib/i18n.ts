@@ -87,6 +87,9 @@ const dict = {
     landing_cta_body: '点下面的按钮，教学法专家会马上和你对话。',
     landing_privacy_note:
       '所有数据保存在你自己浏览器的 LocalStorage 里，不会上传到服务器，也看不到其他老师的场景。',
+    landing_screenshots_title: '长这样',
+    landing_screenshot_design_caption: '设计场景：与教学法专家对话式完善草稿',
+    landing_screenshot_run_caption: '运行场景：和多个 AI 角色对话，带情境图与语音',
 
     // ─── 设计页 ───
     export: '📥 导出',
@@ -512,6 +515,11 @@ const dict = {
     landing_cta_body: 'Click below and the Pedagogy Specialist will start chatting with you.',
     landing_privacy_note:
       'All data stays in your own browser LocalStorage — never uploaded, never visible to other teachers.',
+    landing_screenshots_title: 'Here is what it looks like',
+    landing_screenshot_design_caption:
+      'Design: shape the draft by chatting with the Pedagogy Specialist',
+    landing_screenshot_run_caption:
+      'Run: converse with multiple AI characters, with scene image and voice',
 
     // ─── Design page ───
     export: '📥 Export',

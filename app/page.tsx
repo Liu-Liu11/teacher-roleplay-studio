@@ -240,6 +240,39 @@ function EmptyState({
         </div>
       </section>
 
+      {/* ── Screenshots ────────────────────────────────────── */}
+      <section>
+        <h3 className="text-center text-xl md:text-2xl font-semibold text-slate-900 mb-8">
+          {t('landing_screenshots_title')}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[
+            {
+              src: '/hero-design.png',
+              captionKey: 'landing_screenshot_design_caption',
+            },
+            {
+              src: '/hero-run.png',
+              captionKey: 'landing_screenshot_run_caption',
+            },
+          ].map((shot) => (
+            <figure key={shot.src} className="group">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm group-hover:shadow-md transition-shadow bg-slate-50">
+                <img
+                  src={shot.src}
+                  alt={t(shot.captionKey as any)}
+                  loading="lazy"
+                  className="w-full h-auto block"
+                />
+              </div>
+              <figcaption className="mt-2 text-xs text-slate-500 text-center">
+                {t(shot.captionKey as any)}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
       {/* ── How it works (3 steps) ─────────────────────────── */}
       <section>
         <h3 className="text-center text-xl md:text-2xl font-semibold text-slate-900 mb-8">
