@@ -87,7 +87,7 @@ export default function HomePage() {
         {!hydrated ? (
           <div className="text-center text-slate-400 py-24">{t('loading')}</div>
         ) : list.length === 0 ? (
-          <EmptyState onCreate={handleCreate} />
+          <EmptyState onCreate={handleCreate} onImport={handleImport} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {list.map((s) => (
@@ -155,43 +155,170 @@ export default function HomePage() {
   );
 }
 
-function EmptyState({ onCreate }: { onCreate: () => void }) {
+function EmptyState({
+  onCreate,
+  onImport,
+}: {
+  onCreate: () => void;
+  onImport: () => void;
+}) {
   const { t } = useT();
-  return (
-    <div className="text-center py-24 bg-white border-2 border-dashed border-slate-300 rounded-2xl">
-      <div className="text-6xl mb-4">🎓</div>
-      <h2 className="text-xl font-semibold text-slate-800 mb-2">
-        {t('empty_title')}
-      </h2>
-      <p className="text-slate-500 max-w-md mx-auto mb-6">{t('empty_subtitle')}</p>
-      <Button size="lg" onClick={onCreate}>
-        {t('create_first')}
-      </Button>
 
-      <div className="mt-12 text-left max-w-2xl mx-auto">
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">
+  const howSteps = [
+    {
+      titleKey: 'landing_how_step1_title',
+      bodyKey: 'landing_how_step1_body',
+      icon: '💬',
+    },
+    {
+      titleKey: 'landing_how_step2_title',
+      bodyKey: 'landing_how_step2_body',
+      icon: '🧠',
+    },
+    {
+      titleKey: 'landing_how_step3_title',
+      bodyKey: 'landing_how_step3_body',
+      icon: '🚀',
+    },
+  ] as const;
+
+  const features = [
+    { titleKey: 'landing_feat_npc_title', bodyKey: 'landing_feat_npc_body' },
+    { titleKey: 'landing_feat_image_title', bodyKey: 'landing_feat_image_body' },
+    {
+      titleKey: 'landing_feat_students_title',
+      bodyKey: 'landing_feat_students_body',
+    },
+    { titleKey: 'landing_feat_eval_title', bodyKey: 'landing_feat_eval_body' },
+    {
+      titleKey: 'landing_feat_export_title',
+      bodyKey: 'landing_feat_export_body',
+    },
+    {
+      titleKey: 'landing_feat_bilingual_title',
+      bodyKey: 'landing_feat_bilingual_body',
+    },
+  ] as const;
+
+  const useCases = [
+    { icon: '🏥', titleKey: 'uc_nursing', subKey: 'uc_nursing_sub' },
+    { icon: '⚖️', titleKey: 'uc_law', subKey: 'uc_law_sub' },
+    { icon: '🔬', titleKey: 'uc_forensic', subKey: 'uc_forensic_sub' },
+    { icon: '🤝', titleKey: 'uc_social', subKey: 'uc_social_sub' },
+    { icon: '💼', titleKey: 'uc_business', subKey: 'uc_business_sub' },
+    { icon: '🎓', titleKey: 'uc_any', subKey: 'uc_any_sub' },
+  ] as const;
+
+  return (
+    <div className="space-y-16">
+      {/* ── Hero ───────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-brand-50 border border-slate-200 rounded-3xl px-6 py-14 md:py-20">
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-brand-200/40 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-200/40 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold text-brand-700 bg-white border border-brand-200 px-3 py-1 rounded-full mb-5">
+            <span>🎭</span>
+            <span>TeacherRoleplayStudio</span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+            {t('landing_hero_tagline')}
+          </h2>
+          <p className="mt-5 text-base md:text-lg text-slate-600 leading-relaxed">
+            {t('landing_hero_body')}
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button size="lg" onClick={onCreate}>
+              {t('landing_primary_cta')}
+            </Button>
+            <Button variant="secondary" size="lg" onClick={onImport}>
+              {t('landing_secondary_cta')}
+            </Button>
+          </div>
+          <p className="mt-6 text-xs text-slate-400">
+            🔒 {t('landing_privacy_note')}
+          </p>
+        </div>
+      </section>
+
+      {/* ── How it works (3 steps) ─────────────────────────── */}
+      <section>
+        <h3 className="text-center text-xl md:text-2xl font-semibold text-slate-900 mb-8">
+          {t('landing_how_title')}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {howSteps.map((s) => (
+            <div
+              key={s.titleKey}
+              className="bg-white border border-slate-200 rounded-2xl p-6 hover:border-brand-400 hover:shadow-md transition-all"
+            >
+              <div className="text-3xl mb-3">{s.icon}</div>
+              <h4 className="font-semibold text-slate-900 mb-2">
+                {t(s.titleKey as any)}
+              </h4>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {t(s.bodyKey as any)}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Features ───────────────────────────────────────── */}
+      <section>
+        <h3 className="text-center text-xl md:text-2xl font-semibold text-slate-900 mb-8">
+          {t('landing_features_title')}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {features.map((f) => (
+            <div
+              key={f.titleKey}
+              className="bg-white border border-slate-200 rounded-2xl p-5"
+            >
+              <div className="font-semibold text-slate-900 mb-1.5">
+                {t(f.titleKey as any)}
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {t(f.bodyKey as any)}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Use cases ──────────────────────────────────────── */}
+      <section>
+        <h3 className="text-center text-xl md:text-2xl font-semibold text-slate-900 mb-8">
           {t('use_cases_title')}
         </h3>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          {[
-            { icon: '🏥', titleKey: 'uc_nursing', subKey: 'uc_nursing_sub' },
-            { icon: '⚖️', titleKey: 'uc_law', subKey: 'uc_law_sub' },
-            { icon: '🔬', titleKey: 'uc_forensic', subKey: 'uc_forensic_sub' },
-            { icon: '🤝', titleKey: 'uc_social', subKey: 'uc_social_sub' },
-            { icon: '💼', titleKey: 'uc_business', subKey: 'uc_business_sub' },
-            { icon: '🎓', titleKey: 'uc_any', subKey: 'uc_any_sub' },
-          ].map((c) => (
-            <div key={c.titleKey} className="bg-slate-50 rounded-lg p-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {useCases.map((c) => (
+            <div
+              key={c.titleKey}
+              className="bg-slate-50 border border-slate-200 rounded-xl p-4 hover:bg-white hover:border-brand-300 transition-colors"
+            >
               <div className="font-medium text-slate-800">
                 {c.icon} {t(c.titleKey as any)}
               </div>
-              <div className="text-slate-500 text-xs mt-0.5">
+              <div className="text-slate-500 text-xs mt-1">
                 {t(c.subKey as any)}
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
+
+      {/* ── Final CTA ──────────────────────────────────────── */}
+      <section className="text-center bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 text-white rounded-3xl px-6 py-14">
+        <h3 className="text-2xl md:text-3xl font-bold mb-3">
+          {t('landing_cta_title')}
+        </h3>
+        <p className="text-indigo-200 mb-7 max-w-xl mx-auto">
+          {t('landing_cta_body')}
+        </p>
+        <Button size="lg" onClick={onCreate}>
+          {t('landing_primary_cta')}
+        </Button>
+      </section>
     </div>
   );
 }
