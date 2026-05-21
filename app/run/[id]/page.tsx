@@ -176,10 +176,7 @@ function LivePanel({ scenario, onSessionDone }: any) {
   }, [lastMsg?.id, ttsEnabled]);
 
   async function start() {
-    if (!userApiKey) {
-      alert(t('apikey_missing_error'));
-      return;
-    }
+    // 服务端 env 兜底，不再阻塞缺 key 的同事
     // 新一轮会话 → 代数 +1，让上一轮残留的 setTimeout 链自动失效
     runGenRef.current += 1;
     const myGen = runGenRef.current;
@@ -499,10 +496,6 @@ function SimulatePanel({ scenario, onSessionDone }: any) {
 
   async function run() {
     if (selected.size === 0) return;
-    if (!userApiKey) {
-      alert(t('apikey_missing_error'));
-      return;
-    }
     // 快照 scenario：中途可能有人点 "refine"，batch 要以"按下 Run 时的版本"为准，
     // 这样 scenarioVersion 标注 / 传给 API 的都是一致的一份，避免 batch 里一半新版一半旧版。
     const frozenScenario = scenario;

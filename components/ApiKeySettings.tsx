@@ -9,28 +9,11 @@ import { useT } from '@/lib/useT';
  * Key 存在 zustand（persist 到 LocalStorage），不会离开浏览器到第三方服务器。
  */
 export function ApiKeySettingsButton() {
-  const { t } = useT();
-  const userApiKey = useStudio((s) => s.userApiKey);
-  const [open, setOpen] = useState(false);
-
-  const hasKey = !!userApiKey;
-
-  return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className={`h-9 px-3 rounded-lg border text-sm font-medium transition-colors ${
-          hasKey
-            ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-            : 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-        }`}
-        title={hasKey ? t('apikey_status_set', { prefix: userApiKey.slice(0, 4) }) : t('apikey_status_unset')}
-      >
-        {t('settings')}
-      </button>
-      {open && <ApiKeyModal onClose={() => setOpen(false)} />}
-    </>
-  );
+  // 服务端通过 GOOGLE_GENERATIVE_AI_API_KEY env var 兜底，老师无需自己填 key。
+  // 设置按钮直接隐藏，免得同事看到一个让人犹豫的"要不要填"的入口。
+  // 如果将来要恢复用户自带 key 的能力，把下面的 return null 删掉即可——
+  // ApiKeyModal 组件本体保留着没动。
+  return null;
 }
 
 function ApiKeyModal({ onClose }: { onClose: () => void }) {
@@ -136,26 +119,6 @@ function ApiKeyModal({ onClose }: { onClose: () => void }) {
  * 已经有 key 就什么都不渲染。
  */
 export function ApiKeyMissingBanner() {
-  const { t } = useT();
-  const userApiKey = useStudio((s) => s.userApiKey);
-  const [open, setOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
-
-  if (!hydrated || userApiKey) return null;
-
-  return (
-    <>
-      <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-sm text-amber-800 text-center">
-        {t('apikey_banner_missing')}
-        <button
-          onClick={() => setOpen(true)}
-          className="underline font-medium hover:text-amber-900"
-        >
-          {t('apikey_banner_cta')}
-        </button>
-      </div>
-      {open && <ApiKeyModal onClose={() => setOpen(false)} />}
-    </>
-  );
+  // 服务端 env 兜底后，永远不会"缺 key"了，banner 整条藏掉。
+  return null;
 }

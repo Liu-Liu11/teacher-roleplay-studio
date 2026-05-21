@@ -89,10 +89,6 @@ export function RefineScenarioButton({ scenario, evaluations, onApplied }: Props
       : t('refine_cta');
 
   async function requestRefinement() {
-    if (!userApiKey) {
-      alert(t('apikey_missing_error'));
-      return;
-    }
     // 防重入：loading 中 / modal 已经开着 / noChanges 提示开着 —— 都直接忽略新点击。
     // 同时：如果之前还有个 AbortController 残留（理论上 finally 会清空，但保险起见），先打断它。
     if (loading || proposal || noChanges) return;

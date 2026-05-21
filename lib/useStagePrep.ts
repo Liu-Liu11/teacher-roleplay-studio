@@ -61,10 +61,7 @@ export function useStagePrep(scenario: Scenario): StagePrep {
       setState({ stage: 'done', doneCount: 0, totalCount: 0, failed: [] });
       return;
     }
-    if (!userApiKey) {
-      setState({ stage: 'idle', doneCount: 0, totalCount: total, failed: [] });
-      return;
-    }
+    // 服务端 env 兜底，没填 key 也直接进入生成阶段（不再卡 idle）
     if (startedRef.current) return;
     startedRef.current = true;
 

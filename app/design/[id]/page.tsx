@@ -51,7 +51,8 @@ export default function DesignPage() {
   useEffect(() => {
     if (!hydrated || !scenario) return;
     if (greetedForIdRef.current === scenario.id) return;
-    if (scenario.pedagogyChat.length === 0 && !loading && userApiKey) {
+    // 服务端用 env var 兜底 API key，所以不再需要等待用户填 key 就可以发招呼
+    if (scenario.pedagogyChat.length === 0 && !loading) {
       greetedForIdRef.current = scenario.id;
       sendGreeting();
     }
@@ -77,11 +78,6 @@ export default function DesignPage() {
     userMessage: string,
     opts?: { hideUserFromChat?: boolean }
   ): Promise<boolean> {
-    if (!userApiKey) {
-      alert(t('apikey_missing_error'));
-      return false;
-    }
-
     const nowUser = {
       role: 'user' as const,
       content: userMessage,
