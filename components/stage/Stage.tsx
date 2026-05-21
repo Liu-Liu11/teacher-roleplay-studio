@@ -11,7 +11,10 @@ const ACCENTS = [
   '#2563eb', '#db2777', '#7c3aed', '#059669',
   '#d97706', '#0891b2', '#dc2626', '#4f46e5',
 ];
-function accentFor(id: string): string {
+function accentFor(id: string | undefined | null): string {
+  // 防御：旧 scenario 数据里偶尔会出现 id 为 undefined 的 agent（早期 schema bug
+  // 或不完整的迁移）。让函数对坏数据不崩，回退到默认颜色。
+  if (!id) return ACCENTS[0];
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   return ACCENTS[h % ACCENTS.length];
@@ -95,7 +98,7 @@ export function Stage({
         {/* NPC avatar row */}
         <div className="pt-6 px-6 pb-3">
           <div className="flex flex-wrap items-start justify-center gap-6">
-            {scenario.agents.map((a: Agent) => {
+            {(scenario.agents || []).filter((a) => a && a.id).map((a: Agent) => {
               const accent = accentFor(a.id);
               const speaking = activeNpcId === a.id;
               return (

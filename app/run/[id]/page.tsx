@@ -255,7 +255,7 @@ function LivePanel({ scenario, onSessionDone }: any) {
     const msg: Message = {
       id: createMessageId(),
       speakerId: 'student',
-      speakerName: t('you_as', { role: scenario.studentRole.name }),
+      speakerName: t('you_as', { role: scenario.studentRole?.name || '' }),
       content: studentInput.trim(),
       timestamp: Date.now(),
     };
@@ -335,8 +335,8 @@ function LivePanel({ scenario, onSessionDone }: any) {
         </div>
         <div className="text-xs opacity-80">
           {t('live_subtitle', {
-            role: scenario.studentRole.name || t('role_student'),
-            n: scenario.agents.length,
+            role: scenario.studentRole?.name || t('role_student'),
+            n: (scenario.agents || []).length,
           })}
         </div>
       </div>
@@ -386,7 +386,7 @@ function LivePanel({ scenario, onSessionDone }: any) {
           }}
           rows={2}
           placeholder={t('student_input_ph', {
-            role: scenario.studentRole.name || t('role_student'),
+            role: scenario.studentRole?.name || t('role_student'),
           })}
           className="flex-1 rounded-xl bg-white/95 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-300"
           autoFocus
@@ -418,7 +418,7 @@ function LivePanel({ scenario, onSessionDone }: any) {
         transcript={transcript}
         currentSpeakerId={speakingId}
         thinking={status === 'agent_thinking'}
-        studentName={scenario.studentRole.name || t('role_student')}
+        studentName={scenario.studentRole?.name || t('role_student')}
         audioEnabled={ttsEnabled}
         onPlayAudio={(m) => audioPlayer.play(m)}
         audioStateOf={(id) => audioPlayer.stateOf(id)}
