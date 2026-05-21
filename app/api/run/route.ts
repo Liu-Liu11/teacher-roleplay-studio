@@ -108,6 +108,38 @@ export async function POST(req: NextRequest) {
             ? 'Director decision failed — handing off to student'
             : 'director 决策失败，交给学生';
       }
+
+      // 硬性兜底：多 NPC 场景下，至少要让两个不同的 NPC 完成一来一回再切学生。
+      // 否则就算 prompt 写得再清楚，LLM 偶尔还是会"NPC1 说一句就切学生"，
+      // 表现为老师觉得"NPC 之间不会自动对话"。
+      // 触发条件：
+      //   - 导演决定切学生（STUDENT），且
+      //   - 场上 NPC 数 ≥ 2，且
+      //   - 学生上一次发言之后，最多只有 1 个 NPC 说过话
+      if (nextId === 'STUDENT' && agents.length >= 2) {
+        let consecutiveNpcSinceStudent = 0;
+        let lastNpcId: string | undefined;
+        for (let i = transcript.length - 1; i >= 0; i--) {
+          const sp = transcript[i].speakerId;
+          if (sp === 'student') break;
+          if (sp && sp !== 'narrator') {
+            consecutiveNpcSinceStudent++;
+            if (!lastNpcId) lastNpcId = sp;
+          }
+        }
+        if (consecutiveNpcSinceStudent < 2) {
+          // 优先挑一个还没说过话的 NPC；都说过了就随便挑个不是上次那个的
+          const candidate =
+            agents.find((a) => a.id !== lastNpcId) ?? agents[0];
+          if (candidate) {
+            nextId = candidate.id;
+            reason =
+              loc === 'en'
+                ? `Override: keeping NPC-to-NPC chain going (only ${consecutiveNpcSinceStudent} NPC turn(s) since student)`
+                : `强制延续 NPC 之间对话（学生上次发言后只有 ${consecutiveNpcSinceStudent} 个 NPC 说话）`;
+          }
+        }
+      }
     }
 
     if (nextId === 'END') {

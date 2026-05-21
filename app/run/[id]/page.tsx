@@ -144,7 +144,8 @@ function LivePanel({ scenario, onSessionDone }: any) {
   const [evaluating, setEvaluating] = useState(false);
   // TTS 默认开：scenario.ttsEnabled 没显式设为 false 就当它是 on，避免每次 mount 都静音
   const [ttsEnabled, setTtsEnabled] = useState(scenario.ttsEnabled !== false);
-  const audioPlayer = useAudioPlayer(userApiKey);
+  // 把 agents 传进去，TTS 会按 agent 的性别挑男声/女声音色
+  const audioPlayer = useAudioPlayer(userApiKey, scenario.agents);
   const prep = useStagePrep(scenario);
 
   // Live 的 advance() 是 NPC→NPC 链式递归（每次 setTimeout(advance, 200)）。

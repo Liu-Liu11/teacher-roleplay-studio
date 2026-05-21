@@ -11,6 +11,11 @@ export interface Agent {
   guardrails: string[];            // 绝对不能说/做的事
   /** 如果 avatar 是 emoji/未生成，这里存生成出来的图片头像 dataURL */
   avatarImage?: string;
+  /**
+   * TTS 音色性别。可选——不填的话会从 name + role + persona 文本里自动嗅探
+   * 性别标记（他/她、Mr/Ms 等）。'neutral' 表示明确不偏向。
+   */
+  gender?: 'male' | 'female' | 'neutral';
 }
 
 export interface RubricCriterion {

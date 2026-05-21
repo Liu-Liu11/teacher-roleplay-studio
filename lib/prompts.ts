@@ -339,6 +339,15 @@ export function buildDirectorPrompt(
     .map((m) => `[${m.speakerName}]: ${m.content}`)
     .join('\n');
 
+  // 统计最近若干轮里 NPC 连续说话的次数 —— 给"防 NPC 垄断"的硬约束做提示
+  const recent = (transcript ?? []).slice(-6);
+  let consecutiveNpcTurns = 0;
+  for (let i = recent.length - 1; i >= 0; i--) {
+    const sp = recent[i].speakerId;
+    if (sp && sp !== 'student' && sp !== 'narrator') consecutiveNpcTurns++;
+    else break;
+  }
+
   return `${langDirective(locale)}你是场景的"导演（Director）"，决定下一个发言的应该是谁。
 
 # 可用 NPC 角色
@@ -351,16 +360,32 @@ ${agentsList}
 # 最近的对话
 ${recentLines || '(还没有对话)'}
 
-# 决策原则
-1. 如果学生刚说完话，通常需要有 NPC 回应
-2. 如果一个 NPC 连续说了 2 次，换别人或让学生说
-3. 如果对话自然需要学生继续推进（例如学生被问了问题，或需要学生做决策），返回 "STUDENT"
-4. 如果达成了场景结束条件，返回 "END"：
-${(scenario.endConditions ?? []).map((c) => `   - ${c}`).join('\n')}
-5. 如果已经 ${transcript.length} 轮了（上限 ${scenario.maxTurns}），趋向结束
+最近已经有 ${consecutiveNpcTurns} 个 NPC 连续说话（学生还没插话）。
+
+# 决策原则（按优先级）
+
+1. **学生刚说完话 → 必须由 NPC 回应**（这是硬规则，不要返回 STUDENT 或 END）
+
+2. **多 NPC 场景里，让 NPC 之间把交锋打完，再切给学生**。具体来说：
+   - 如果上一句 NPC 是在**对另一个 NPC 说话**（点名、反驳、补充、质疑、回应），让被点到的 NPC 回应
+   - 如果上一句 NPC 是在**陈述/抱怨/独白**而场上还有其他 NPC，让另一个 NPC 自然反应（共情、追问、打断、提出不同看法）
+   - 如果场景里只有 1 个 NPC，就不存在 NPC 互动，按学生主导
+   - **关键：不要因为"NPC 刚说了一两句"就急着把球丢回学生**。NPC 之间应该自然完成一段对话再让学生介入。
+
+3. **什么时候才返回 "STUDENT"**（满足任意一条即可）：
+   - 某个 NPC 在最近一两条里**明确点名学生**（用学生的角色名/职位），或直接问学生（"你怎么看？""你打算怎么办？"）
+   - 多个 NPC 已经完成了一个回合的交锋（一来一回至少 2-3 句），等学生介入推进
+   - 已经有 ${consecutiveNpcTurns} 个 NPC 连续说话（${consecutiveNpcTurns >= 3 ? '**已经太多了**，这一轮必须切给学生或结束' : consecutiveNpcTurns >= 2 ? '可以切给学生了，除非 NPC 之间还有明显未完成的互动' : 'NPC 之间的互动还短，倾向继续 NPC'}）
+
+4. **同一个 NPC 不要连续说 3 次以上** —— 如果某个 NPC 刚说了 2 次，优先换**别的 NPC**（不是直接切学生）
+
+5. **什么时候返回 "END"**：
+   - 达成场景结束条件之一：
+${(scenario.endConditions ?? []).map((c) => `     · ${c}`).join('\n') || '     · (未设定)'}
+   - 已经 ${transcript.length} 轮了（上限 ${scenario.maxTurns}），趋向结束
 
 # 输出
-只输出 JSON：{"next": "<agent.id 或 STUDENT 或 END>", "reason": "一句话"}`;
+只输出 JSON：{"next": "<agent.id 或 STUDENT 或 END>", "reason": "一句话理由，说明为什么选这个发言者"}`;
 }
 
 // ────────────────────────────────────────────────────────────
