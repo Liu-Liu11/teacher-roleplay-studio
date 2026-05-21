@@ -512,29 +512,52 @@ function SimulatePanel({ scenario, onSessionDone }: any) {
       const persona = personas.find((s) => s.id === studentId)!;
       setCurrentlyRunning(persona.name);
       try {
-        // 1. 跑完整会话
-        const simRes = await fetch('/api/simulate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            scenario: scenarioForNetwork(frozenScenario),
-            simulatedStudentId: studentId,
-            locale,
-            apiKey: userApiKey,
-          }),
-        });
-        const simData = await parseJsonOrThrow(simRes);
-
-        const sessionId = createSessionId();
-        const transcript: Message[] = simData.transcript;
-        const endReason: string = simData.endReason;
-        const endReasonCode = simData.endReasonCode as
+        // 1. 跑完整会话——**单步循环模式**（2026-05 起）
+        // 旧版一次请求里跑完整 N 回合，Vercel Hobby 60s 上限频繁超时。
+        // 现在每次请求只生成一条消息，客户端 loop 调用，单次请求永远 < 30s。
+        const transcript: Message[] = [];
+        if (frozenScenario.openingBeat) {
+          transcript.push({
+            id: createMessageId(),
+            speakerId: 'narrator',
+            speakerName: locale === 'en' ? 'Narrator' : '旁白',
+            content: frozenScenario.openingBeat,
+            timestamp: Date.now(),
+          });
+        }
+        let endReason = locale === 'en' ? 'Ended normally' : '正常结束';
+        let endReasonCode:
           | 'normal'
           | 'director_ended'
           | 'student_ended'
           | 'agent_not_found'
           | 'max_turns'
-          | undefined;
+          | undefined = 'normal';
+        // 保险阈值：scenario.maxTurns 的 2 倍——服务端也有自己的 maxTurns 兜底，
+        // 这里只是防止万一服务端没正确返回 END 时客户端无限循环。
+        const HARD_CAP = (frozenScenario.maxTurns ?? 20) * 2 + 10;
+        for (let i = 0; i < HARD_CAP; i++) {
+          const simRes = await fetch('/api/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              scenario: scenarioForNetwork(frozenScenario),
+              transcript,
+              simulatedStudentId: studentId,
+              locale,
+              apiKey: userApiKey,
+            }),
+          });
+          const stepData = await parseJsonOrThrow(simRes);
+          if (stepData.next === 'END') {
+            endReason = stepData.endReason || endReason;
+            endReasonCode = stepData.endReasonCode || 'normal';
+            break;
+          }
+          if (stepData.message) transcript.push(stepData.message);
+        }
+
+        const sessionId = createSessionId();
 
         // 2. 评估——**评估失败不丢 transcript**。原来 evalRes 出错会直接 throw，
         // 整个 session 不入库，老师看不到刚刚跑出来的对话，浪费 API 成本。
