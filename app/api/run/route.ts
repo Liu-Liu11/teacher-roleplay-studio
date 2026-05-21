@@ -118,14 +118,20 @@ export async function POST(req: NextRequest) {
     }
 
     // 2) 找到对应 agent
-    const agent = (scenario.agents ?? []).find((a) => a.id === nextId);
+    // 兜底：Director 偶尔会返回一个不在 agents 列表里的 id（比如把 agent 的 name
+    // 当 id 返回、或者半个 hash）。以前一找不到就 fallback 给学生，体验上就是"我
+    // 说一句话之后 NPC 不回应了"。这里改成 fallback 给 agents[0]——至少让对话继续，
+    // 而不是死锁在学生 turn。
+    const agent =
+      (scenario.agents ?? []).find((a) => a.id === nextId) ??
+      (scenario.agents ?? [])[0];
     if (!agent) {
       return NextResponse.json<RunResponse>({
         next: 'STUDENT',
         reason:
           loc === 'en'
-            ? `Agent id=${nextId} not found — handing to student`
-            : `未找到 agent id=${nextId}，交给学生`,
+            ? 'Scenario has no agents — handing to student'
+            : '场景没有 NPC，交给学生',
       });
     }
 

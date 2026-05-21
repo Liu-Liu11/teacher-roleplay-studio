@@ -33,9 +33,16 @@ export function scenarioForNetwork(scenario: Scenario): Scenario {
   return {
     ...rest,
     pedagogyChat: [],   // 保留字段但清空，避免服务端 schema 校验缺字段报错
-    agents: (agents || []).map((a: any) => {
+    agents: (agents || []).map((a: any, idx: number) => {
       const { avatarImage: _ai, ...agentRest } = a || {};
-      return agentRest;
+      // 自愈：老 scenario 里偶尔会有 agent 的 id 是空/undefined（早期 schema bug），
+      // 这会让 Director 决策完之后服务端 .find(a => a.id === pickedId) 永远落空 →
+      // 服务端 fallback 给学生 → 表现为"学生说一句话就停在那不动了"。
+      // 这里给缺 id 的补一个稳定的占位 id，让 Director 和 agent 查找能正常工作。
+      const safeId =
+        (typeof agentRest.id === 'string' && agentRest.id) ||
+        `agent-${idx}`;
+      return { ...agentRest, id: safeId };
     }),
   };
 }
